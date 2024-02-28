@@ -38,7 +38,7 @@ const Enter = () => {
   };
 
   useEffect(() => {
-    const newSocket = io("https://speedcraft-server.vercel.app/");
+    const newSocket = io("https://speedcraft-server.vercel.app");
     setSocket(newSocket);
   
     return () => {
