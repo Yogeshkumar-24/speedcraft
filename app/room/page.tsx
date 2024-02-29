@@ -38,7 +38,7 @@ const Enter = () => {
   };
 
   useEffect(() => {
-    const newSocket = io("https://speedcraft-server.onrender.com");
+    const newSocket = io("http://localhost:8800");
     setSocket(newSocket);
   
     return () => {
