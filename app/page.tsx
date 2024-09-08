@@ -9,8 +9,6 @@ interface PageProps {
   randomWords: string[];
 }
 
-
-
 const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
   const [randomWords, setRandomWords] = useState<string[]>(
     initialRandomWords || []
@@ -36,15 +34,15 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState("");
   const [completed, setCompleted] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
-
 
   useEffect(() => {
     const words = generateRandomWords(mode);
 
     setRandomWords(words);
-  },[mode])
+  }, [mode]);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -81,13 +79,12 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
     timerStartedRef.current = true; // Set the flag to true
   };
 
-
   useEffect(() => {
     setWordHistory(randomWords.map((word) => ({ word, correct: 2 })));
   }, [randomWords]);
 
   const checkMatch = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const currentChar = e.target.value;
+    const currentChar = e.target.value;
     const currentWord = randomWords[wordIndex];
     setOrigWordCharIndex(origWordCharIndex + 1);
 
@@ -117,7 +114,7 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
       });
     }
 
-    if(completed && e.target.value.endsWith(" ")){
+    if (completed && e.target.value.endsWith(" ")) {
       setText("");
     }
 
@@ -172,7 +169,7 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
     setText("");
     setRandomWords(generateRandomWords(mode));
     setWordHistory(randomWords.map((word) => ({ word, correct: 2 })));
-    setCompleted(false)
+    setCompleted(false);
   };
 
   const focusWordRef = useRef<HTMLSpanElement | null>(null);
@@ -200,9 +197,25 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
     restartGame();
   }, [mode]);
 
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  const handleDarkMode = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDarkMode(e.target.checked);
+  };
+  
+
   return (
-    <div className="bg-blue-100 flex flex-col h-screen justify-between ">
-      <div className="bg-blue-500 h-20 w-full flex justify-between">
+    <div
+      className={`bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text flex flex-col h-screen justify-between`}
+    >
+      {" "}
+      <div className="bg-blue-500 h-20 w-full flex justify-between dark:bg-gray-800" >
         <Image
           className="m-[-20px] ml-4"
           src="/assets/logo.png"
@@ -210,18 +223,33 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
           height={300}
           width={150}
         />
-        
-          <button>
-            <Multiplayer />
-          </button>
-      </div>
 
+        <div className="my-auto">
+          <label className="inline-flex items-center cursor-pointer flex-col sm:flex-row ">
+            <input
+              type="checkbox"
+              value=""
+              className="sr-only peer"
+              checked={darkMode}
+              onChange={handleDarkMode}
+            />
+            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span className="ms-3 hidden sm:block sm:text-sm text-gray-900 dark:text-gray-100">
+              Dark Mode
+            </span>
+          </label>
+        </div>
+
+        <button>
+          <Multiplayer />
+        </button>
+      </div>
       <div
         className={`mx-auto sm:w-[600px] md:w-[768px] w-[400px] ${
           timer != 0 ? "mt-[-250px]" : ""
         } sm:max-h-[300px] max-h-[300px] overflow-hidden flex flex-col gap-6`}
       >
-          <div className="font-bold text-center text-xl">Select Modes</div>
+        <div className="font-bold text-center text-xl">Select Modes</div>
         <div className="flex justify-center items-center gap-4">
           <button
             onClick={() => {
@@ -247,7 +275,7 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
             <Image src="/assets/fire.png" alt="fire" width={30} height={30} />
           </button>
         </div>
-       
+
         {loading && (
           <div className="flex items-center justify-center h-full ">
             <div
@@ -340,22 +368,22 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
         )}
         {!loading && (
           <div
-            className={`bg-white h-24 pt-2 rounded-md ${
+            className={`bg-white h-24 pt-2 rounded-md dark:bg-gray-800 ${
               timer === 0 ? "hidden" : ""
             }`}
           >
             <div
               className={`${
                 timer === 0 ? "hidden" : ""
-              } w-full sm:h-20 h-16  rounded-md bg-white overflow-hidden`}
+              } w-full sm:h-20 h-16  rounded-md bg-white overflow-hidden dark:bg-gray-800 `}
             >
               <div className=" flex flex-wrap gap-2 w-full px-6 ">
                 {wordHistory.map((item, i) => (
                   <span
                     key={i}
                     className={`line  p-0.5 ${
-                      i === wordIndex ? "bg-gray-300" : ""
-                    } ${i === wordIndex && wrongWord ? "bg-red-500" : ""}`}
+                      i === wordIndex ? "bg-gray-300 dark:bg-blue-500 " : ""
+                    } ${i === wordIndex && wrongWord ? "bg-red-500 dark:bg-red-500" : ""}`}
                   >
                     <span
                       className={`${
@@ -389,7 +417,7 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
             autoCapitalize="off"
             autoComplete="off"
             autoCorrect="off"
-            spellCheck = "false"
+            spellCheck="false"
             autoFocus
             ref={inputRef}
             value={text}
@@ -398,40 +426,39 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
             }}
             onChange={(e) => {
               if (text == "" && e.target.value == " ") setText("");
-              else  {
+              else {
                 setText(e.target.value);
 
                 checkMatch(e);
               }
             }}
             type="text"
-            className="p-1 pl-4 w-full border sm:text-2xl text-xl border-none rounded-sm border-black"
+            className="p-1 pl-4 w-full border sm:text-2xl text-xl  rounded-sm border-black dark:bg-gray-800 dark:focus:outline-none"
           />
           <div className="w-8 flex justify-center items-center bg-blue-500 text-white rounded-sm mx-1 px-5">
             {timer}
           </div>
           <button
             onClick={restartGame}
-            className="sm:w-[50px] w-[50px] sm:text-md text-xs rounded-md h-[40px] bg-black flex justify-center items-center "
+            className="sm:w-[50px] w-[50px] sm:text-md text-xs rounded-md h-[40px] bg-black flex justify-center items-center dark:bg-gray-400"
           >
             <Image
               src="/assets/reset.svg"
               alt="reset"
               height={20}
               width={20}
-              className="text-white fill-white"
+              className="text-white fill-white "
             />
           </button>
         </div>
       </div>
-
       {timer === 0 ? (
-        <div className="w-[200px]   bg-blue-400 mx-auto rounded-md flex flex-col  mt-6 ">
+        <div className="w-[200px]   bg-blue-400 mx-auto rounded-md flex flex-col  mt-6  dark:bg-blue-500">
           <h2 className="text-white font-bold p-2 text-center">Result</h2>
-          <div className="  bg-white flex flex-col ">
+          <div className="  bg-white flex flex-col dark:bg-gray-800">
             <span className="text-4xl mt-4 font-bold text-green-500 text-center flex flex-col ">
               {wpm} WPM{" "}
-              <span className="text-sm font-normal opacity-90 text-gray-400 ">
+              <span className="text-sm font-normal opacity-90 text-gray-400 dark:text-gray-300 ">
                 (Words Per Minute)
               </span>{" "}
             </span>
@@ -462,13 +489,9 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
       ) : (
         ""
       )}
-
-      <footer className="  shadow bg-blue-500  w-full ">
+      <footer className="  shadow bg-blue-500  w-full dark:bg-gray-800">
         <div className="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
-          <span className="text-sm text-gray-900 sm:text-center dark:text-gray-900">
-          
-           
-          </span>
+          <span className="text-sm text-gray-900 sm:text-center dark:text-gray-900"></span>
           {/* <ul className="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-900 dark:text-gray-900 sm:mt-0">
             <li>
               <a href="#" className="hover:underline me-4 md:me-6">
