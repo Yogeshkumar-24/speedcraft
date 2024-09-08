@@ -21,7 +21,7 @@ const Game: React.FC<GameProps> = ({ username, room }) => {
   const [roomFull, setRoomFull] = useState(false);
 
   useEffect(() => {
-    const newSocket = io("http://localhost:8800");
+    const newSocket = io("https://speedcraft-server.onrender.com/");
     setSocket(newSocket);
     console.log("Socket connected:", newSocket); // Add this log statement
 
