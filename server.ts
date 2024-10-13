@@ -4,9 +4,11 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import next from 'next';
 import { getRandomWords } from './components/words';
+import cors from 'cors';
 
-const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev });
+
+const app = next({ dev: false });
+
 const handle = app.getRequestHandler();
 
 const port = process.env.PORT || 3000;
@@ -30,7 +32,12 @@ app.prepare().then(() => {
     const NO_OF_WORDS = 2;
     const socketToUsernameMap = new Map<string, string>();    const expressApp = express();
     const server = createServer(expressApp);
-    const io = new Server(server);
+    const io = new Server(server, {
+        cors: {
+          origin: "*",  // Or specify your frontend URL here
+          methods: ["GET", "POST"]
+        }
+      });
 
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
