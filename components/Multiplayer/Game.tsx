@@ -21,7 +21,7 @@ const Game: React.FC<GameProps> = ({ username, room }) => {
   const [roomFull, setRoomFull] = useState(false);
 
   useEffect(() => {
-    const newSocket = io("https://speedcraft-server.onrender.com/");
+    const newSocket = io();
     setSocket(newSocket);
     console.log("Socket connected:", newSocket); // Add this log statement
 
@@ -339,34 +339,47 @@ const Game: React.FC<GameProps> = ({ username, room }) => {
               <span className="">You're the HOST</span>
             </div>
           )}
-          <div className="mb-4 border border-blue-500 py-8 mx-8">
-            {Object.entries(userWordIndex).map(([user, index]) => (
-              <div
-                key={user}
-                className="flex justify-center pl-4 pr-6 items-center gap-4"
-              >
-                <div className={`${index === numOfWords ? "opacity-50" : ""}`}>
-                  {user}
-                </div>
-                <div
-                  className={`h-[2px] w-[500px] ${
-                    user === username ? "bg-green-500" : "bg-blue-400"
-                  } flex items-center relative ${
-                    index === numOfWords ? "opacity-50" : ""
-                  }`}
-                >
-                  <div
-                    className={`h-[16px] w-[16px] ${
-                      user === username ? "bg-green-500" : "bg-black"
-                    }  absolute rounded-full ${
-                      index === numOfWords ? "opacity-50" : ""
-                    }`}
-                    style={{ left: `${(index / (numOfWords || 1)) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
+         <div className="mb-4 border border-blue-500 py-8 mx-8">
+  {Object.entries(userWordIndex).map(([user, index]) => (
+    <div
+      key={user}
+      className="flex justify-between items-center mx-4 mb-4 gap-4"
+    >
+      {/* Name and progress container */}
+      <div className="flex-1 flex items-center gap-4">
+        {/* User Name */}
+        <div className={`w-[150px] text-right pr-4 ${index === numOfWords ? "opacity-50" : ""}`}>
+          {user}
+        </div>
+
+        {/* Progress Bar */}
+        <div
+          className={`relative flex-1 h-[2px] w-full ${
+            user === username ? "bg-green-500" : "bg-blue-400"
+          } flex items-center ${
+            index === numOfWords ? "opacity-50" : ""
+          }`}
+        >
+          {/* Progress Marker */}
+          <div
+            className={`h-[16px] w-[16px] ${
+              user === username ? "bg-green-500" : "bg-black"
+            } absolute rounded-full ${
+              index === numOfWords ? "opacity-50" : ""
+            }`}
+            style={{ left: `${(index / (numOfWords || 1)) * 100}%` }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Word Count */}
+      <div className={`w-[50px] text-center ${index === numOfWords ? "opacity-50" : ""}`}>
+        {index}/{numOfWords}
+      </div>
+    </div>
+  ))}
+</div>
+
           {!startGame && !isHost && (
             <div className=" text-center">
               {" "}
@@ -495,7 +508,7 @@ const Game: React.FC<GameProps> = ({ username, room }) => {
                         <td className="px-4 py-2 text-center ">{user.trim()}</td>
                         <td className="px-4 py-2 text-center ">{numOfWords}</td>
                         <td className="px-4 py-2 text-center">{count}</td>
-                        <td className="px-4 py-2 text-center">{Math.round((Math.abs(numOfWords - count) / numOfWords) * 100).toFixed(2)}</td>
+                        <td className="px-4 py-2 text-center">{numOfWords - count <= 0 ? "0" : Math.round((Math.abs(numOfWords - count) / numOfWords) * 100).toFixed(2)}</td>
                       </tr>
                     );
                   })}
