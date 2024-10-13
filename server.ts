@@ -34,9 +34,9 @@ app.prepare().then(() => {
     const server = createServer(expressApp);
     const io = new Server(server, {
         cors: {
-          origin: "*",  // Or specify your frontend URL here
-          methods: ["GET", "POST"]
-        }
+          origin: 'https://speedcraft-jwdb-git-multitype-dev-yogeshkumar24s-projects.vercel.app', // Your frontend URL
+          methods: ['GET', 'POST'],
+        },
       });
 
     io.on('connection', (socket) => {
