@@ -1,5 +1,6 @@
 "use client";
 
+import { Algo } from "@/components/Algo";
 import Multiplayer from "@/components/Multiplayer/Multiplayer";
 import generateRandomWords from "@/components/Multiplayer/offline/RandomWords";
 import Image from "next/image";
@@ -14,7 +15,7 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
     initialRandomWords || []
   );
 
-  const time = 60;
+  const [time, setTime] = useState(60);
   const timerStartedRef = useRef(false);
   const [mode, setMode] = useState(0);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
@@ -38,11 +39,27 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    const words = generateRandomWords(mode);
+  const fetchStories = async () => {
+    try {
+      const stories = [];
+      for (let i = 0; i < 5; i++) {
+        // Fetch multiple stories
+        const response = await fetch("https://shortstories-api.onrender.com/");
+        const data = await response.json();
+        if (data.story) stories.push(data.story);
+      }
 
-    setRandomWords(words);
-  }, [mode]);
+      if (stories.length === 0) return ["No stories found."];
+
+      // Join stories with a new line and ↵ symbol
+      return stories.join(" \n ↵ \n ");
+    } catch (error) {
+      console.error("Error fetching stories:", error);
+      return "Failed to load stories.";
+    }
+  };
+
+
 
   useEffect(() => {
     if (inputRef.current) {
@@ -82,6 +99,7 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
   useEffect(() => {
     setWordHistory(randomWords.map((word) => ({ word, correct: 2 })));
   }, [randomWords]);
+  
 
   const checkMatch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const currentChar = e.target.value;
@@ -154,12 +172,12 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
       startTimer();
     }
   };
-
-  const restartGame = () => {
+  const restartGame = async () => {
     if (intervalId) {
       clearInterval(intervalId);
       setIntervalId(null);
     }
+
     timerStartedRef.current = false;
     setTimer(time);
     setWordIndex(0);
@@ -167,9 +185,50 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
     setCorrectWords(0);
     setWrongWord(false);
     setText("");
-    setRandomWords(generateRandomWords(mode));
-    setWordHistory(randomWords.map((word) => ({ word, correct: 2 })));
     setCompleted(false);
+
+    if (mode === 2) {
+      try {
+        setLoading(true);
+        // Fetch multiple stories
+        const stories = await Promise.all([
+          fetch("https://shortstories-api.onrender.com/").then((res) =>
+            res.json()
+          ),
+          fetch("https://shortstories-api.onrender.com/").then((res) =>
+            res.json()
+          ),
+          fetch("https://shortstories-api.onrender.com/").then((res) =>
+            res.json()
+          ),
+        ]);
+
+        // Extract stories and shuffle them
+        const storyTexts = stories.map((s) => s.story);
+        const shuffledStory = storyTexts.join(" ↵ "); // Add newline indicator
+        const words = shuffledStory.split(" ");
+
+        setRandomWords(words);
+        setWordHistory(words.map((word) => ({ word, correct: 2 })));
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching stories:", error);
+        const fallbackStory = ["Failed", "to", "load", "story."];
+        setRandomWords(fallbackStory);
+        setWordHistory(fallbackStory.map((word) => ({ word, correct: 2 })));
+      }
+    } else if (mode === 3) {
+      // Algorithm Mode
+      const randomAlgorithm = Algo[Math.floor(Math.random() * Algo.length)];
+      const words = randomAlgorithm.split(" "); // Preserve spaces and newlines
+      setRandomWords(words);
+      setWordHistory(words.map((word) => ({ word, correct: 2 })));
+    } else {
+      // Normal Mode: Generate random words
+      const newWords = generateRandomWords(mode);
+      setRandomWords(newWords);
+      setWordHistory(newWords.map((word) => ({ word, correct: 2 })));
+    }
   };
 
   const focusWordRef = useRef<HTMLSpanElement | null>(null);
@@ -180,6 +239,11 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
         block: "start",
         inline: "center",
       });
+    }
+
+    if (text === "") {
+      setOrigWordCharIndex(0);
+      setWrongWord(false);
     }
   }, [text, randomWords]);
   useEffect(() => {
@@ -195,27 +259,26 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
 
   useEffect(() => {
     restartGame();
-  }, [mode]);
+  }, [mode, time]);
 
   useEffect(() => {
     if (darkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
 
   const handleDarkMode = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDarkMode(e.target.checked);
   };
-  
 
   return (
     <div
       className={`bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text flex flex-col h-screen justify-between`}
     >
       {" "}
-      <div className="bg-blue-500 h-20 w-full flex justify-between dark:bg-gray-800" >
+      <div className="bg-blue-500 h-20 w-full flex justify-between dark:bg-gray-800">
         <Image
           className="m-[-20px] ml-4"
           src="/assets/logo.png"
@@ -246,8 +309,8 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
       </div>
       <div
         className={`mx-auto sm:w-[600px] md:w-[768px] w-[400px] ${
-          timer != 0 ? "mt-[-250px]" : ""
-        } sm:max-h-[300px] max-h-[300px] overflow-hidden flex flex-col gap-6`}
+          timer !== 0 && mode !== 2 && mode !== 3 ? "mt-[-250px]" : "mt-[-10px]"
+        } sm:max-h-[400px] max-h-[400px] overflow-hidden flex flex-col gap-6`}
       >
         <div className="font-bold text-center text-xl">Select Modes</div>
         <div className="flex justify-center items-center gap-4">
@@ -255,9 +318,9 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
             onClick={() => {
               setMode(0);
             }}
-            disabled={!mode ? true : false}
+            disabled={mode === 0 ? true : false}
             className={` ${
-              !mode ? "opacity-50" : ""
+              mode === 0 ? "opacity-50" : ""
             } sm:w-[120px] w-[120px] sm:text-[14px] text-xs rounded-md h-[40px] bg-blue-800 text-white`}
           >
             Normal
@@ -266,17 +329,47 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
             onClick={() => {
               setMode(1);
             }}
-            disabled={mode ? true : false}
+            disabled={mode === 1 ? true : false}
             className={` ${
-              mode ? "opacity-50" : ""
+              mode === 1 ? "opacity-50" : ""
             } sm:w-[120px] w-[120px] flex justify-center items-center  sm:text-[14px] text-xs rounded-md h-[40px] bg-black text-white`}
           >
             Advanced
             <Image src="/assets/fire.png" alt="fire" width={30} height={30} />
           </button>
+          <button
+            onClick={() => setMode(2)}
+            disabled={mode === 2}
+            className={`${
+              mode === 2 ? "opacity-50" : ""
+            } sm:w-[120px] w-[120px] flex justify-center items-center sm:text-[14px] text-xs rounded-md h-[40px] bg-green-700 text-white`}
+          >
+            Story Mode
+          </button>
+          <button
+            onClick={() => setMode(3)}
+            disabled={mode === 3}
+            className={`${
+              mode === 3 ? "opacity-50" : ""
+            } sm:w-[120px] w-[120px] flex justify-center items-center sm:text-[14px] text-xs rounded-md h-[40px] bg-yellow-700 text-white`}
+          >
+            Algo Mode
+          </button>
+
+          <select
+            className=" bg-inherit"
+            name="time"
+            id=""
+            onChange={(e) => setTime(Number(e.target.value))}
+          >
+            <option className=" bg-gray-800 px-2 py-1" value="60">1 minute</option>
+            <option className=" bg-gray-800 px-2 py-1" value="120">2 minutes</option>
+            <option className=" bg-gray-800 px-2 py-1" value="300">5 minutes</option>
+            <option className=" bg-gray-800 px-2 py-1" value="600">10 minutes</option>
+          </select>
         </div>
 
-        {loading && (
+        {loading ? (
           <div className="flex items-center justify-center h-full ">
             <div
               aria-label="Loading..."
@@ -365,54 +458,66 @@ const Page: React.FC<PageProps> = ({ randomWords: initialRandomWords }) => {
               </span>
             </div>
           </div>
-        )}
-        {!loading && (
+        ) : (
           <div
-            className={`bg-white h-24 pt-2 rounded-md dark:bg-gray-800 ${
+            className={`bg-white ${mode === 2 || mode === 3 ? 'h-[300px]' : 'h-24'}   rounded-md dark:bg-gray-800 ${
               timer === 0 ? "hidden" : ""
             }`}
           >
             <div
               className={`${
                 timer === 0 ? "hidden" : ""
-              } w-full sm:h-20 h-16  rounded-md bg-white overflow-hidden dark:bg-gray-800 `}
+              } w-full ${mode === 2 || mode === 3 ? ' h-[200px]' : 'sm:h-24 h-16'}   rounded-md bg-white overflow-hidden dark:bg-gray-800`}
             >
-              <div className=" flex flex-wrap gap-2 w-full px-6 ">
-                {wordHistory.map((item, i) => (
-                  <span
-                    key={i}
-                    className={`line  p-0.5 ${
-                      i === wordIndex ? "bg-gray-300 dark:bg-blue-500 " : ""
-                    } ${i === wordIndex && wrongWord ? "bg-red-500 dark:bg-red-500" : ""}`}
-                  >
+              <div className="flex flex-wrap gap-2 w-full px-6">
+                {wordHistory.map((item, i) => {
+                  if (item.word === "↵") {
+                    if (i === wordIndex) {
+                      setWordIndex((prev) => prev + 1); // Move to the next word automatically
+                    }
+                    return <div key={i} className="w-full"></div>; // Insert a line break
+                  }
+
+                  return (
                     <span
-                      className={`${
-                        item.correct === 1 ? " text-red-500" : ""
-                      } ${item.correct === 0 ? " text-green-500" : ""} `}
+                      key={i}
+                      className={`line p-0.5 ${
+                        i === wordIndex ? "bg-gray-300 dark:bg-blue-500 " : ""
+                      } ${
+                        i === wordIndex && wrongWord
+                          ? "bg-red-500 dark:bg-red-500"
+                          : ""
+                      }`}
                     >
-                      {item.word.split("").map((char, idx) => (
-                        <span
-                          className={`sm:text-xl  md:text-2xl lg:text-3x; `}
-                          id="text"
-                          key={idx}
-                          ref={(ref) => {
-                            if (i === wordIndex) {
-                              focusWordRef.current = ref;
-                            }
-                          }}
-                        >
-                          {char}
-                        </span>
-                      ))}
+                      <span
+                        className={`${
+                          item.correct === 1 ? " text-red-500" : ""
+                        } ${item.correct === 0 ? " text-green-500" : ""}`}
+                      >
+                        {item.word.split("").map((char, idx) => (
+                          <span
+                            className="sm:text-xl md:text-2xl lg:text-3xl"
+                            id="text"
+                            key={idx}
+                            ref={(ref) => {
+                              if (i === wordIndex) {
+                                focusWordRef.current = ref;
+                              }
+                            }}
+                          >
+                            {char}
+                          </span>
+                        ))}
+                      </span>
                     </span>
-                    <span> </span>
-                  </span>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
-        <div className="sm:w-[600px] md:w-[760px] w-[400px] flex px-12">
+
+        <div className="sm:w-[600px] md:w-[760px] w-[400px] flex px-12 z-10">
           <input
             autoCapitalize="off"
             autoComplete="off"
