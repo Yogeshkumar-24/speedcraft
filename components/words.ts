@@ -20,6 +20,13 @@ const randomWords = [
   // Add more words as needed
 ];
 
+const storyContent = [
+  "Once upon a time in a distant land, there was a brave warrior.",
+  "He embarked on a journey to save his kingdom from darkness.",
+  "Through forests and mountains, he fought mighty creatures.",
+  "His courage and wisdom led him to victory.",
+];
+
 export const getRandomWords = (count : number) => {
   const shuffledWords = randomWords.sort(() => Math.random() - 0.5);
   return shuffledWords.slice(0, count);
